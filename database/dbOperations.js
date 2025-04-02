@@ -58,7 +58,7 @@ const patchUsername=(oldUsername,newUsername)=>{
 //     }
 // }
 
-const patchEmail=(newEmail,username)=>{
+const patchEmail=(newPassword,username)=>{
     try{
         db.run("UPDATE USERS SET USERNAME = ? WHERE USERNAME = ?" [newEmail,username],function(err){
             if (err){
