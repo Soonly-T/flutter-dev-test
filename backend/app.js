@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
+const routes=require('./routes');
 
 const router=express.Router();
 
