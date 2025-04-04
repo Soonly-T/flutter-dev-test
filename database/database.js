@@ -1,7 +1,10 @@
 const express= require('express');
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
-const db=new sqlite3.Database('appinfo', (err) => {
+const dbPath = path.join(__dirname, 'appinfo');
+
+const db=new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database ' + err.message);
   }
@@ -10,7 +13,7 @@ const db=new sqlite3.Database('appinfo', (err) => {
     
   }  
 })
-
+console.log('Database path being used:', dbPath); // Add this line
 module.exports = db;
 
 

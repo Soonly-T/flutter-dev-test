@@ -13,4 +13,16 @@ const generateAccessToken=(user)=>{
 
 }
 
-module.exports={generateAccessToken}
+const verifyAccessToken=(token)=>{
+    const secret= "R1P_4ND_T34R "
+    try {
+        const decoded = jwt.verify(token, secret);
+        return decoded;
+    } catch (err) {
+        console.error('Token verification failed:', err);
+        return null;
+    }
+}
+
+module.exports={generateAccessToken, verifyAccessToken}
+

@@ -1,16 +1,15 @@
 const express= require('express');
-const jsonwebtoken = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const app = express();
 const routes=require('./routes');
 
-const router=express.Router();
-
+// console.log('Type of routes:', typeof routes);
+// console.log('Value of routes:', routes);
 
 app.use(express.json());
 app.use(cors())
+
+app.use('/', routes);
 
 
 app.listen(port=3000,hostname="localhost",()=>{

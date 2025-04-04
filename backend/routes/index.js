@@ -1,11 +1,10 @@
-const router = require('express').Router();
-const feExpenses = require('./frontend/expenses.js')
+const express = require('express');
+const expensesRoutes = require('./expenses/expenses');
+const usersRoutes = require('./users/users');
 
+const router = express.Router();
 
-router.get('/', (req, res) => {
-    
-});
-
-
+router.use('/expenses', expensesRoutes);
+router.use('/', usersRoutes);
 
 module.exports = router;

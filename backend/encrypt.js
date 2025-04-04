@@ -1,48 +1,57 @@
 const bcrypt=require('bcrypt');
 const saltRounds=10;
-const myPlaintextPassword='s0/\/\\P4$$w0rD';
-const someOtherPlaintextPassword='not_bacon';
+// const myPlaintextPassword='s0/\/\\P4$$w0rD';
+// const someOtherPlaintextPassword='not_bacon';
 const dbOperations=require('../database/dbOperations');
 
 
-const encrypt = (password)=>{
-    if (err){
+const encrypt = async(password)=>{
+    try{
+        const hash=await bcrypt.hash(password,saltRounds);
+        return hash;
+    }catch(err){
         console.log(err);
+        throw err;
     }
-    else{
-        const hashedPass=bcrypt.hash(password,saltRounds,(err,hash));
-        return hashedPass
-    }
+
 }
 
-const comparePassword=(username,password,storedPassword,saltRoundshash)=>{
-    const hashdb=dbOperations.getHashedPassword(username);
-    const hash=encrypt(password);
+const comparePassword= async(loginIdentifier,password)=>{
 
-    if (hashdb===hash){
+    const hashdb= await dbOperations.getHashedPass(loginIdentifier);
+
+
+    console.log("Comparing password");
+    console.log(loginIdentifier)
+    console.log(hashdb);
+
+    const match=await bcrypt.compare(password,hashdb);
+    console.log("Match: ",match);
+
+
+    if (match){
         return true;
     }
     else{
         return false;
     }
 
-
 }
 
 
-bcrypt.hash(myPlaintextPassword,saltRounds,(err,hash)=>{
-    if(err){
-        console.log(err);
-    }
-    else{
-        console.log(hash);
-        bcrypt.compare(myPlaintextPassword,hash,(err,result)=>{
-            console.log(result);
-        });
-        bcrypt.compare(someOtherPlaintextPassword,hash,(err,result)=>{
-            console.log(result);
-        });
-    }
-});
+// bcrypt.hash(myPlaintextPassword,saltRounds,(err,hash)=>{
+//     if(err){
+//         console.log(err);
+//     }
+//     else{
+//         console.log(hash);
+//         bcrypt.compare(myPlaintextPassword,hash,(err,result)=>{
+//             console.log(result);
+//         });
+//         bcrypt.compare(someOtherPlaintextPassword,hash,(err,result)=>{
+//             console.log(result);
+//         });
+//     }
+// });
 
 module.exports={encrypt, comparePassword}
