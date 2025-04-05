@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import '../widgets/alertBox.dart';
+import 'signup.dart';
 
 const double spaceHeight = 32;
 
-class StartScreen extends StatefulWidget {
-  const StartScreen({Key? key}) : super(key: key);
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<StartScreen> createState() => _StartScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _StartScreenState extends State<StartScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final loginController = TextEditingController();
   final passwordController = TextEditingController();
   @override
@@ -21,11 +23,39 @@ class _StartScreenState extends State<StartScreen> {
   }
 
   void debugPrintCredentials() {
+    bool filled = false;
     print("printing credentials");
     print('Login: ${loginController.text}');
     print('Password: ${passwordController.text}');
+
+    if (loginController.text.isEmpty && passwordController.text.isEmpty) {
+      print('Both login and password fields are empty');
+      alertBox.showAlertDialog(
+        context,
+        "Please fill in the credentials",
+        "Both username/email and password fields are empty",
+      );
+    } else if (loginController.text.isEmpty) {
+      print('Login field is empty');
+      alertBox.showAlertDialog(
+        context,
+        "Please fill in the credentials",
+        "Username/email field is empty",
+      );
+    } else if (passwordController.text.isEmpty) {
+      print('Password field is empty');
+      alertBox.showAlertDialog(
+        context,
+        "Please fill in the credentials",
+        "Password field is empty",
+      );
+    } else {
+      print('Both fields are filled');
+      filled = true;
+    }
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
@@ -92,7 +122,12 @@ class _StartScreenState extends State<StartScreen> {
                           ),
                           ElevatedButton(
                             onPressed: () {
-                              // Handle login action
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const Signup(),
+                                ),
+                              );
                             },
                             child: const Text('Sign Up'),
                           ),
