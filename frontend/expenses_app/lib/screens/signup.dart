@@ -98,7 +98,8 @@ class _SignupState extends State<Signup> {
             if (response.statusCode == 200 || response.statusCode == 201) {
               signupStatusNotifier.value = 'Signup successful!';
             } else {
-              signupStatusNotifier.value = 'Signup failed: ${response.body}';
+              signupStatusNotifier.value =
+                  'Signup failed: ${(jsonDecode(response.body) as Map<String, dynamic>)["message"]}';
             }
           })
           .catchError((error) {
@@ -176,7 +177,12 @@ class _SignupState extends State<Signup> {
                       return Text(
                         status,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          color:
+                              status.contains('successful')
+                                  ? Colors.green
+                                  : Colors.red,
+                        ),
                       );
                     },
                   ),
