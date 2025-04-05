@@ -210,8 +210,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         return Text(
                           status,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.red,
+                          style: TextStyle(
+                            color:
+                                status.startsWith("Welcome back")
+                                    ? Colors.green
+                                    : Colors.red,
                             fontSize: 16,
                           ),
                         );
