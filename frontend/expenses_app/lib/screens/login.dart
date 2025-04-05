@@ -32,8 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<http.Response> login() {
     return http.post(
-      // Uri.parse('http://10.0.2.2:3000/login'), //android emulator
-      Uri.parse('http://localhost:3000/login'), //andere
+      Uri.parse('http://10.0.2.2:3000/login'), //android emulator
+      // Uri.parse('http://localhost:3000/login'), //andere
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'loginIdentifier': loginController.text.trim(),
