@@ -36,7 +36,7 @@ router.post("/login", async (req, res) => {
             console.log(userData)
             const userjwt = jwt.generateAccessToken(userData);
             // Write the logic for the jwt token
-            return res.status(200).json({ token: userjwt, message: "Login successful" });
+            return res.status(200).json({ token: userjwt, message: "Login successful",userData:userData });
         } else {
             // Alert user invalid credential
             return res.status(401).json({ message: "Password does not match with the username or email" });
