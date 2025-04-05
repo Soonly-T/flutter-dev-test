@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:expenses_app/screens/expenses.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -31,8 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<http.Response> login() {
     return http.post(
-      Uri.parse('http://10.0.2.2:3000/login'), //android emulator
-      // Uri.parse('http://localhost:3000/login'), //andere
+      // Uri.parse('http://10.0.2.2:3000/login'), //android emulator
+      Uri.parse('http://localhost:3000/login'), //andere
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'loginIdentifier': loginController.text.trim(),
@@ -99,6 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
               loginStatusNotifier.value =
                   "Welcome back, ${responseBody['userData']["USERNAME"]}";
               storeData(responseBody);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+              );
             } else if (response.statusCode == 401) {
               final responseBody = jsonDecode(response.body);
               loginStatusNotifier.value =
