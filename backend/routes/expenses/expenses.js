@@ -1,31 +1,34 @@
 const express = require('express');
 const dbOperations = require('../../../database/dbOperations');
-const router=express.Router();
+const { authenticateToken } = require('../../middleware/jwt');
+const router = express.Router();
 
-router.get('/get-expenses', async (req, res) => {
-    const { id, startDate, endDate } = req.body;
+router.get('/get-expenses/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
     try {
-        await dbOperations.getExpenses(id, startDate, endDate);
-        res.status(200).json({ message: "Success" });
+        const expenses = await dbOperations.getExpenses(id);
+        res.status(200).json({ expenses: expenses, message: "Success" });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Error in getting expenses" });
     }
 });
 
-router.delete('/remove-expense', async (req, res) => {
-    const { id, username } = req.body;
+router.delete('/remove-expense', authenticateToken, async (req, res) => {
+    const { id } = req.body;
+    const loggedInUsername = req.user.username;
     try {
-        await dbOperations.removeExpense(id, username);
-        res.status(200).json({ message: "Expense removed successfully" });  
+        await dbOperations.removeExpense(id, loggedInUsername);
+        res.status(200).json({ message: "Expense removed successfully" });
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: "Error in removing expense" });
     }
 });
 
-router.post('/add-expense', async (req, res) => {
-    const { username, amount, category, date, notes } = req.body;
+router.post('/add-expense', authenticateToken, async (req, res) => {
+    const { amount, category, date, notes } = req.body;
+    const username = req.user.username;
     try {
         await dbOperations.addExpense(username, amount, category, date, notes);
         res.status(200).json({ message: "Expense added successfully" });
@@ -35,10 +38,11 @@ router.post('/add-expense', async (req, res) => {
     }
 });
 
-router.put('/modify-expense', async (req, res) => {
-    const { id, username, amount, category, notes } = req.body;
+router.put('/modify-expense', authenticateToken, async (req, res) => {
+    const { id, amount, category, notes } = req.body;
+    const loggedInUsername = req.user.username;
     try {
-        await dbOperations.modifyExpense(id, username, amount, category, notes);
+        await dbOperations.modifyExpense(id, loggedInUsername, amount, category, notes);
         res.status(200).json({ message: "Expense modified successfully" });
     } catch (err) {
         console.log(err);

@@ -138,52 +138,17 @@ const removeExpense = (id, username) => {
     });
 };
 
-const getExpenses = (id, fromDate, toDate) => {
-    try {
-        
-        return new Promise((resolve, reject) => {
-            if (fromDate && toDate) {
-                db.all("SELECT * FROM EXPENSE WHERE USER_ID = (SELECT ID FROM USERS WHERE ID = ?) AND DATE BETWEEN ? AND ?", [id, fromDate, toDate], (err, rows) => {
-                    if (err) {
-                        console.error("Error fetching expenses:", err);
-                        reject(err);
-                    } else {
-                        resolve(rows);
-                    }
-                });
-            } else if (fromDate) {
-                db.all("SELECT * FROM EXPENSE WHERE USER_ID = (SELECT ID FROM USERS WHERE ID = ?) AND DATE >= ?", [id, fromDate], (err, rows) => {
-                    if (err) {
-                        console.error("Error fetching expenses:", err);
-                        reject(err);
-                    } else {
-                        resolve(rows);
-                    }
-                });
-            } else if (toDate) {
-                db.all("SELECT * FROM EXPENSE WHERE USER_ID = (SELECT ID FROM USERS WHERE ID = ?) AND DATE <= ?", [id, toDate], (err, rows) => {
-                    if (err) {
-                        console.error("Error fetching expenses:", err);
-                        reject(err);
-                    } else {
-                        resolve(rows);
-                    }
-                });
+const getExpenses = (id) => {
+    return new Promise((resolve, reject) => {
+        db.all("SELECT * FROM EXPENSE WHERE USER_ID = ?", [id], (err, rows) => {
+            if (err) {
+                console.error("Error fetching expenses:", err);
+                reject(err);
             } else {
-                db.all("SELECT * FROM EXPENSE WHERE USER_ID = (SELECT ID FROM USERS WHERE ID = ?)", [id], (err, rows) => {
-                    if (err) {
-                        console.error("Error fetching expenses:", err);
-                        reject(err);
-                    } else {
-                        resolve(rows);
-                    }
-                });
+                resolve(rows);
             }
         });
-    } catch (err) {
-        console.error("Error in getExpenses:", err);
-        throw err;
-    }
+    });
 };
 
 const getHashedPass = async (loginIdentifier) => {
