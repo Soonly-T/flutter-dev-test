@@ -5,38 +5,38 @@ const addUser = (username, email, hashedPass) => {
         db.get("SELECT 1 FROM USERS WHERE USERNAME = ? OR EMAIL = ?", [username, email], (err, row) => {
             if (err) {
                 console.log(err);
-                return reject(err); 
+                return reject(err);
             }
             if (row) {
-                return reject(new Error("Username or email already exists in the database.")); 
+                return reject(new Error("Username or email already exists in the database."));
             }
             db.run(`INSERT INTO USERS(USERNAME, EMAIL, HASHED_PASS) VALUES (?, ?, ?)`, [username, email, hashedPass], function(err) {
                 if (err) {
                     console.log(err);
-                    return reject(err); 
+                    return reject(err);
                 }
                 db.get("SELECT ID, USERNAME, EMAIL FROM USERS WHERE USERNAME = ?", [username], (err, row) => {
                     if (err) {
                         console.log(err);
-                        return reject(err); 
+                        return reject(err);
                     }
                     console.log(row);
-                    resolve(row); 
+                    resolve(row);
                 });
             });
         });
     });
 };
 
-const removeUser = (username) => {
+const removeUser = (userId) => {
     return new Promise((resolve, reject) => {
         try {
-            db.run("DELETE FROM EXPENSE WHERE USER_ID IN (SELECT ID FROM USERS WHERE USERNAME = ?)", [username], function(err) {
+            db.run("DELETE FROM EXPENSE WHERE USER_ID = ?", [userId], function(err) {
                 if (err) {
                     console.log(err);
                     reject(err);
                 } else {
-                    db.run("DELETE FROM USERS WHERE USERNAME = ?", [username], function(err) {
+                    db.run("DELETE FROM USERS WHERE ID = ?", [userId], function(err) {
                         if (err) {
                             console.log(err);
                             reject(err);
@@ -86,10 +86,10 @@ const patchEmail = (newEmail, username) => {
     });
 };
 
-const addExpense = (username, amount, category, date, notes) => {
+const addExpense = (userId, amount, category, date, notes) => {
     return new Promise((resolve, reject) => {
         try {
-            db.run("INSERT INTO EXPENSE (USER_ID, AMOUNT, CATEGORY, DATE, NOTES) VALUES ((SELECT ID FROM USERS WHERE USERNAME = ?), ?, ?, ?, ?)", [username, amount, category, date, notes], function(err) {
+            db.run("INSERT INTO EXPENSE (USER_ID, AMOUNT, CATEGORY, DATE, NOTES) VALUES (?, ?, ?, ?, ?)", [userId, amount, category, date, notes], function(err) {
                 if (err) {
                     console.log(err);
                     reject(err);
@@ -104,11 +104,11 @@ const addExpense = (username, amount, category, date, notes) => {
 };
 
 
-const modifyExpense = (id, username, amount, category, notes) => {
+const modifyExpense = (id, userId, amount, category, notes) => {
     return new Promise((resolve, reject) => {
         try {
-            
-            db.run("UPDATE EXPENSE SET AMOUNT = ?, CATEGORY = ?, NOTES = ? WHERE ID = ? AND USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?)", [amount, category, notes, id, username], function(err) {
+
+            db.run("UPDATE EXPENSE SET AMOUNT = ?, CATEGORY = ?, NOTES = ? WHERE ID = ? AND USER_ID = ?", [amount, category, notes, id, userId], function(err) {
                 if (err) {
                     console.log(err);
                     reject(err);
@@ -139,9 +139,9 @@ const removeExpense = (id) => {
     });
 };
 
-const getExpenses = (id) => {
+const getExpenses = (userId) => {
     return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM EXPENSE WHERE USER_ID = ?", [id], (err, rows) => {
+        db.all("SELECT * FROM EXPENSE WHERE USER_ID = ?", [userId], (err, rows) => {
             if (err) {
                 console.error("Error fetching expenses:", err);
                 reject(err);
@@ -189,5 +189,30 @@ const getUser = async (loginIdentifier) => {
     }
 };
 
+const getExpenseByIdAndUserId = (expenseId, userId) => {
+    return new Promise((resolve, reject) => {
+        db.get("SELECT * FROM EXPENSE WHERE ID = ? AND USER_ID = ?", [expenseId, userId], (err, row) => {
+            if (err) {
+                console.error("Error fetching expense:", err);
+                reject(err);
+            } else {
+                resolve(row);
+            }
+        });
+    });
+};
 
-module.exports = {addUser,removeUser,patchUsername,patchEmail,addExpense,modifyExpense,removeExpense,getExpenses,getHashedPass,getUser}
+
+module.exports = {
+    addUser,
+    removeUser,
+    patchUsername,
+    patchEmail,
+    addExpense,
+    modifyExpense,
+    removeExpense,
+    getExpenses,
+    getHashedPass,
+    getUser,
+    getExpenseByIdAndUserId
+};

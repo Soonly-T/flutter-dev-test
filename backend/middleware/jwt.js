@@ -1,20 +1,21 @@
 const jwt=require('jsonwebtoken')
+require('dotenv').config();
 
 const generateAccessToken=(user)=>{
     const payload={
-        id:user.id,
-        username:user.username,
-        email:user.email
+        id:user.ID,
+        username:user.USERNAME,
+        email:user.EMAIL
     }
-
-    const secret = "R1P_4ND_T34R "
+    console.log(payload)
+    const secret = process.env.JWT_SECRET;
     const options = { expiresIn: '1h' };
     return jwt.sign(payload,secret,options)
 
 }
 
 const verifyAccessToken=(token)=>{
-    const secret= "R1P_4ND_T34R "
+    const secret= process.env.JWT_SECRET;
     try {
         const decoded = jwt.verify(token, secret);
         return decoded;

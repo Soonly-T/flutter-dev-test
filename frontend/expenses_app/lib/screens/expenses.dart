@@ -24,6 +24,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   int? userId;
   late Future<List<dynamic>?> _expensesFuture;
   double spaceHeight = 32;
+  DateTime? _selectedDate;
+  List<dynamic> _allExpenses = []; // To store all fetched expenses
 
   final FlutterSecureStorage storage = FlutterSecureStorage();
   final Future<SharedPreferences> prefs = SharedPreferences.getInstance();
@@ -54,12 +56,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     email = await getEmail();
   }
 
-  Future<List<dynamic>?> getExpenses(int userId) async {
-    final uri = Uri.parse(
-        'http://$frontendHost:$frontendPort/expenses/get-expenses/$userId');
-    // final Uri uri = Uri.parse(
-    //   'http://10.0.2.2:3000/expenses/get-expenses/$userId',
-    // );
+  Future<List<dynamic>?> getExpenses() async {
+    final uri =
+        Uri.parse('http://$frontendHost:$frontendPort/expenses/get-expenses');
     try {
       debugPrint('Token: $token');
       final response = await http.get(
@@ -70,8 +69,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         },
       );
       if (response.statusCode == 200) {
-        debugPrint(response.body);
-        return jsonDecode(response.body)["expenses"];
+        debugPrint('All Expenses Response: ${response.body}');
+        final responseData = jsonDecode(response.body);
+        _allExpenses = responseData["expenses"] ?? [];
+        return _filterExpensesByMonthYear(_selectedDate);
       } else {
         debugPrint('Failed to get expenses: ${response.statusCode}');
         return null;
@@ -96,27 +97,57 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   Future<void> _refreshExpenses() async {
     setState(() {
-      _expensesFuture = getUserId().then((id) {
-        if (id != null) {
-          return getExpenses(id);
-        }
-        return null;
-      });
+      _expensesFuture = getExpenses();
     });
+  }
+
+  List<dynamic> _filterExpensesByMonthYear(DateTime? date) {
+    if (date == null) {
+      return _allExpenses;
+    }
+    final year = date.year;
+    final month = date.month;
+    return _allExpenses.where((expense) {
+      final expenseDate = DateTime.parse(expense['DATE']);
+      return expenseDate.year == year && expenseDate.month == month;
+    }).toList();
+  }
+
+  Future<void> _showMonthYearPicker() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(DateTime.now().year + 1), // Adjust as needed
+      initialDatePickerMode: DatePickerMode.year,
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch: Colors.blue,
+              accentColor: Colors.blueAccent,
+              brightness: Brightness.light,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = DateTime(picked.year, picked.month);
+        _expensesFuture =
+            Future.value(_filterExpensesByMonthYear(_selectedDate));
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    _expensesFuture = Future.value([]); // Initialize with an empty Future
-    _loadUserData().then((_) {
-      setState(() {
-        if (userId != null) {
-          debugPrint("getexpenses is called");
-          _expensesFuture = getExpenses(userId!);
-        }
-      });
-    });
+    _selectedDate = DateTime.now();
+    _expensesFuture = getExpenses(); // Fetch all expenses on init
   }
 
   @override
@@ -173,6 +204,36 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 32.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _showMonthYearPicker,
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today),
+                            SizedBox(width: 8),
+                            Text(
+                              _selectedDate != null
+                                  ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}"
+                                  : "Filter by Month and Year",
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 FutureBuilder(
                   future: _expensesFuture,
                   builder: (context, snapshot) {
@@ -182,7 +243,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       return Text('Error: ${snapshot.error}');
                     } else if (snapshot.data == null ||
                         snapshot.data!.isEmpty) {
-                      return const Text('No expenses found.');
+                      return const Text(
+                          'No expenses found for the selected month.');
                     } else {
                       return ListView.builder(
                         shrinkWrap: true,

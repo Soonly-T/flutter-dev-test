@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -9,7 +8,7 @@ import 'package:expenses_app/main.dart';
 
 class ExpenseForm extends StatefulWidget {
   String? expenseId;
-  String? username;
+  String? username; // You might still need this for UI display
   String? initialNotes;
   String? initialCategory;
   double? initialAmount;
@@ -147,7 +146,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
       return;
     }
     final body = jsonEncode({
-      'username': username,
+      'userId': userId, // Use userId instead of username
       'amount': (amount * 100).round() / 100.0,
       'category': categoryToSend,
       'date': selectedDate?.toIso8601String(),
@@ -228,7 +227,7 @@ class _ExpenseFormState extends State<ExpenseForm> {
     debugPrint('Expense ID: ${widget.expenseId}');
     final body = jsonEncode({
       'id': widget.expenseId,
-      'username': username,
+      'userId': userId, // Use userId instead of username
       'amount': (amount * 100).round() / 100.0,
       'category': categoryToSend,
       'date': selectedDate?.toIso8601String(),

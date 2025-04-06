@@ -15,6 +15,7 @@ class ExpenseCard extends StatelessWidget {
   final String category;
   final DateTime date;
   final String? notes;
+  final VoidCallback onExpenseUpdated; // Add this callback
 
   ExpenseCard({
     super.key,
@@ -24,7 +25,7 @@ class ExpenseCard extends StatelessWidget {
     required this.category,
     required this.date,
     this.notes,
-    required Null Function() onExpenseUpdated,
+    required this.onExpenseUpdated, // Initialize the callback
   });
 
   final storage = FlutterSecureStorage();
@@ -72,11 +73,7 @@ class ExpenseCard extends StatelessWidget {
 
       if (response.statusCode == 200) {
         debugPrint('Expense deleted successfully');
-        if (context.mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => ExpensesScreen()),
-          );
-        }
+        onExpenseUpdated(); // Call the callback to refresh the list
       } else {
         debugPrint('Failed to delete expense: ${response.body}');
       }
@@ -101,11 +98,7 @@ class ExpenseCard extends StatelessWidget {
     );
 
     if (result == true) {
-      if (context.mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => ExpensesScreen()),
-        );
-      }
+      onExpenseUpdated(); // Call the callback to refresh the list
     }
   }
 
