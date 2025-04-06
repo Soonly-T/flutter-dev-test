@@ -9,7 +9,7 @@ app.listen(port=3000,hostname="192.168.0.115",()=>{
 })
 
 
-set the port and hostname of the server
+set the port and hostname of the server and run it by node app.js
 
 ## FRONTEND SETTINGS
 
