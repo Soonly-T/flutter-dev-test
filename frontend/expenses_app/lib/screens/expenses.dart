@@ -8,70 +8,62 @@ import 'dart:convert';
 import 'expenseForm.dart';
 
 class ExpensesScreen extends StatefulWidget {
-  const ExpensesScreen({Key? key}) : super(key: key);
-
   @override
   State<ExpensesScreen> createState() => _ExpensesScreenState();
 }
 
 class _ExpensesScreenState extends State<ExpensesScreen> {
-  final storage = const FlutterSecureStorage();
-  final prefs = SharedPreferences.getInstance();
+  String? token;
+  String? username;
+  String? email;
+  int? userId;
+  late Future<List<dynamic>?> _expensesFuture;
+  double spaceHeight = 32;
+
+  final FlutterSecureStorage storage = FlutterSecureStorage();
+  final Future<SharedPreferences> prefs = SharedPreferences.getInstance();
+
+  Future<String?> getToken() async {
+    return await storage.read(key: 'token');
+  }
+
+  Future<int?> getUserId() async {
+    final userIdString = await storage.read(key: 'id');
+    return userIdString != null ? int.tryParse(userIdString) : null;
+  }
 
   Future<String?> getUsername() async {
     final preferences = await prefs;
     return preferences.getString('username');
   }
 
-  Future<int?> getUserId() async {
-    final userIdString = await storage.read(key: 'id');
-    if (userIdString != null) {
-      return int.tryParse(userIdString);
-    }
-    return null;
+  Future<String?> getEmail() async {
+    final preferences = await prefs;
+    return preferences.getString('email');
   }
 
-  Future<String?> getToken() async {
-    final token = await storage.read(key: 'token');
-    if (token != null) {
-      return token;
-    }
-    return null;
+  Future<void> _loadUserData() async {
+    token = await getToken();
+    userId = await getUserId();
+    username = await getUsername();
+    email = await getEmail();
   }
 
-  double spaceHeight = 32;
-
-  late Future<int?> userId;
-  late Future<List<dynamic>?> _expensesFuture;
-  late Future<String?> _usernameFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    userId = getUserId();
-    _usernameFuture = getUsername();
-    _expensesFuture = userId.then((id) {
-      if (id != null) {
-        return getExpenses(id, null, null);
-      }
-      return null;
-    });
-  }
-
-  Future<List<dynamic>?> getExpenses(
-    int userId,
-    DateTime? startDate,
-    DateTime? endDate,
-  ) async {
-    final Uri uri = Uri.parse('http://10.0.2.2:3000/get-expenses/$userId');
-
+  Future<List<dynamic>?> getExpenses(int userId) async {
+    final Uri uri = Uri.parse(
+      'http://10.0.2.2:3000/expenses/get-expenses/$userId',
+    );
     try {
+      print('Token: $token');
       final response = await http.get(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
-
       if (response.statusCode == 200) {
+        print(response.body);
         return jsonDecode(response.body)["expenses"];
       } else {
         print('Failed to get expenses: ${response.statusCode}');
@@ -84,28 +76,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   void addExpense() async {
+    var usr = await getUsername();
     final newExpense = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder:
-            (context) => ExpenseForm(
-              expenseData: {
-                'username': getUsername(),
-                'title': '',
-                'amount': 0.0,
-                'date': DateTime.now().toIso8601String().substring(0, 10),
-                'category': '',
-                'notes': '',
-              },
-            ),
-      ),
+      MaterialPageRoute(builder: (context) => ExpenseForm(username: usr)),
     );
 
     if (newExpense == true) {
       setState(() {
         _expensesFuture = getUserId().then((id) {
           if (id != null) {
-            return getExpenses(id, null, null);
+            return getExpenses(id);
           }
           return null;
         });
@@ -114,6 +95,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _expensesFuture = Future.value([]); // Initialize with an empty Future
+    _loadUserData().then((_) {
+      setState(() {
+        if (userId != null) {
+          print("getexpenses is called");
+          _expensesFuture = getExpenses(userId!);
+        }
+      });
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -130,6 +124,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _expensesFuture = getUserId().then((id) {
+                  if (id != null) {
+                    return getExpenses(id);
+                  }
+                  return null;
+                });
+              });
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -147,14 +156,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         onPressed: () {
                           addExpense();
                         },
-                        child: Text(
-                          "+",
-                          style: TextStyle(
-                            fontSize: 32,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+
                         style: ElevatedButton.styleFrom(
                           fixedSize: Size(50, 50),
                           backgroundColor: Colors.green,
@@ -163,11 +165,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           ),
                           padding: EdgeInsets.all(0),
                         ),
+                        child: Text(
+                          "+",
+                          style: TextStyle(
+                            fontSize: 32,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                FutureBuilder<List<dynamic>?>(
+                FutureBuilder(
                   future: _expensesFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -184,18 +194,28 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
                           final expense = snapshot.data![index];
+                          print(
+                            "Username being passed to ExpenseCard: $username",
+                          ); // Debug print
                           return ExpenseCard(
-                            id: expense['id'].toString(),
-                            username: expense['username'],
-                            amount: (expense['amount'] as num).toDouble(),
-                            category: expense['category'],
-                            date: DateTime.parse(expense['date']),
-                            notes: expense['notes'],
+                            id: expense['ID'].toString(),
+                            username: username ?? 'Loading...',
+                            amount:
+                                (expense['AMOUNT'] is num)
+                                    ? (expense['AMOUNT'] as num).toDouble()
+                                    : double.tryParse(
+                                          expense['AMOUNT']?.toString() ??
+                                              '0.0',
+                                        ) ??
+                                        0.0,
+                            category: expense['CATEGORY'],
+                            date: DateTime.parse(expense['DATE']),
+                            notes: expense['NOTES'],
                             onExpenseUpdated: () {
                               setState(() {
                                 _expensesFuture = getUserId().then((id) {
                                   if (id != null) {
-                                    return getExpenses(id, null, null);
+                                    return getExpenses(id);
                                   }
                                   return null;
                                 });

@@ -22,6 +22,7 @@ class ExpenseCard extends StatelessWidget {
     required this.category,
     required this.date,
     this.notes,
+    required Null Function() onExpenseUpdated,
   });
 
   final storage = FlutterSecureStorage();
@@ -51,24 +52,24 @@ class ExpenseCard extends StatelessWidget {
   }
 
   void deleteExpense(BuildContext context) async {
-    final url = Uri.parse('https://10.0.2.2:3000/expenses/remove-expense');
+    final url = Uri.parse('http://10.0.2.2:3000/expenses/remove-expense/$id');
+    // final url = Uri.parse('http://localhost:3000/expenses/remove-expense/$id');
     final token = await getToken(); // Get the token
 
     try {
-      final response = await http.post(
+      final response = await http.delete(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token', // Add the token
         },
-        body: {'id': id, 'username': username},
       );
 
       if (response.statusCode == 200) {
         print('Expense deleted successfully');
         if (context.mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+            MaterialPageRoute(builder: (context) => ExpensesScreen()),
           );
         }
       } else {
@@ -85,14 +86,12 @@ class ExpenseCard extends StatelessWidget {
       MaterialPageRoute(
         builder:
             (context) => ExpenseForm(
-              expenseData: {
-                'id': id,
-                'username': username,
-                'amount': amount,
-                'category': category,
-                'date': date.toIso8601String(),
-                'notes': notes,
-              },
+              expenseId: id, // Use named parameter 'expenseId'
+              username: username,
+              initialAmount: amount,
+              initialCategory: category,
+              initialDate: date,
+              initialNotes: notes,
             ),
       ),
     );
@@ -100,7 +99,7 @@ class ExpenseCard extends StatelessWidget {
     if (result == true) {
       if (context.mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+          MaterialPageRoute(builder: (context) => ExpensesScreen()),
         );
       }
     }

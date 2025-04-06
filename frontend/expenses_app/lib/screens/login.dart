@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
               storeData(responseBody);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+                MaterialPageRoute(builder: (context) => ExpensesScreen()),
               );
             } else if (response.statusCode == 401) {
               final responseBody = jsonDecode(response.body);

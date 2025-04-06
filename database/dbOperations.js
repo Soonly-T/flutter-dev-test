@@ -107,6 +107,7 @@ const addExpense = (username, amount, category, date, notes) => {
 const modifyExpense = (id, username, amount, category, notes) => {
     return new Promise((resolve, reject) => {
         try {
+            
             db.run("UPDATE EXPENSE SET AMOUNT = ?, CATEGORY = ?, NOTES = ? WHERE ID = ? AND USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?)", [amount, category, notes, id, username], function(err) {
                 if (err) {
                     console.log(err);
@@ -121,10 +122,10 @@ const modifyExpense = (id, username, amount, category, notes) => {
     });
 };
 
-const removeExpense = (id, username) => {
+const removeExpense = (id) => {
     return new Promise((resolve, reject) => {
         try {
-            db.run("DELETE FROM EXPENSE WHERE ID = ? AND USER_ID = (SELECT ID FROM USERS WHERE USERNAME = ?)", [id, username], function(err) {
+            db.run("DELETE FROM EXPENSE WHERE ID = ?", [id], function(err) {
                 if (err) {
                     console.log(err);
                     reject(err);
