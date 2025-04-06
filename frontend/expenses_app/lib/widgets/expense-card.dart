@@ -1,8 +1,10 @@
 import 'package:expenses_app/screens/expenses.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:expenses_app/main.dart';
 
 import '../screens/expenseForm.dart';
 
@@ -52,7 +54,10 @@ class ExpenseCard extends StatelessWidget {
   }
 
   void deleteExpense(BuildContext context) async {
-    final url = Uri.parse('http://10.0.2.2:3000/expenses/remove-expense/$id');
+    final url = Uri.parse(
+      'http://$frontendHost:$frontendPort/expenses/remove-expense/$id',
+    ); // Use the loaded host and port
+    // final url = Uri.parse('http://10.0.2.2:3000/expenses/remove-expense/$id');
     // final url = Uri.parse('http://localhost:3000/expenses/remove-expense/$id');
     final token = await getToken(); // Get the token
 
@@ -66,17 +71,17 @@ class ExpenseCard extends StatelessWidget {
       );
 
       if (response.statusCode == 200) {
-        print('Expense deleted successfully');
+        debugPrint('Expense deleted successfully');
         if (context.mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => ExpensesScreen()),
           );
         }
       } else {
-        print('Failed to delete expense: ${response.body}');
+        debugPrint('Failed to delete expense: ${response.body}');
       }
     } catch (error) {
-      print('Error deleting expense: $error');
+      debugPrint('Error deleting expense: $error');
     }
   }
 
@@ -84,15 +89,14 @@ class ExpenseCard extends StatelessWidget {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => ExpenseForm(
-              expenseId: id, // Use named parameter 'expenseId'
-              username: username,
-              initialAmount: amount,
-              initialCategory: category,
-              initialDate: date,
-              initialNotes: notes,
-            ),
+        builder: (context) => ExpenseForm(
+          expenseId: id, // Use named parameter 'expenseId'
+          username: username,
+          initialAmount: amount,
+          initialCategory: category,
+          initialDate: date,
+          initialNotes: notes,
+        ),
       ),
     );
 
@@ -153,10 +157,9 @@ class ExpenseCard extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(right: 5.0),
                         child: ElevatedButton(
-                          onPressed:
-                              () => deleteExpense(
-                                context,
-                              ), // Call the delete function
+                          onPressed: () => deleteExpense(
+                            context,
+                          ), // Call the delete function
                           child: Icon(
                             Icons.remove, // Use an icon for better alignment
                             color: Colors.white,

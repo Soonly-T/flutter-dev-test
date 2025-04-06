@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/expense-card.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import './login.dart';
+import 'package:expenses_app/main.dart';
 
 import 'expenseForm.dart';
 
 class ExpensesScreen extends StatefulWidget {
+  const ExpensesScreen({super.key});
+
   @override
   State<ExpensesScreen> createState() => _ExpensesScreenState();
 }
@@ -50,11 +55,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<List<dynamic>?> getExpenses(int userId) async {
-    final Uri uri = Uri.parse(
-      'http://10.0.2.2:3000/expenses/get-expenses/$userId',
-    );
+    final uri = Uri.parse(
+        'http://$frontendHost:$frontendPort/expenses/get-expenses/$userId');
+    // final Uri uri = Uri.parse(
+    //   'http://10.0.2.2:3000/expenses/get-expenses/$userId',
+    // );
     try {
-      print('Token: $token');
+      debugPrint('Token: $token');
       final response = await http.get(
         uri,
         headers: {
@@ -63,14 +70,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         },
       );
       if (response.statusCode == 200) {
-        print(response.body);
+        debugPrint(response.body);
         return jsonDecode(response.body)["expenses"];
       } else {
-        print('Failed to get expenses: ${response.statusCode}');
+        debugPrint('Failed to get expenses: ${response.statusCode}');
         return null;
       }
     } catch (error) {
-      print('Error during HTTP request: $error');
+      debugPrint('Error during HTTP request: $error');
       return null;
     }
   }
@@ -83,15 +90,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     );
 
     if (newExpense == true) {
-      setState(() {
-        _expensesFuture = getUserId().then((id) {
-          if (id != null) {
-            return getExpenses(id);
-          }
-          return null;
-        });
-      });
+      _refreshExpenses();
     }
+  }
+
+  Future<void> _refreshExpenses() async {
+    setState(() {
+      _expensesFuture = getUserId().then((id) {
+        if (id != null) {
+          return getExpenses(id);
+        }
+        return null;
+      });
+    });
   }
 
   @override
@@ -101,13 +112,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     _loadUserData().then((_) {
       setState(() {
         if (userId != null) {
-          print("getexpenses is called");
+          debugPrint("getexpenses is called");
           _expensesFuture = getExpenses(userId!);
         }
       });
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -124,21 +136,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _expensesFuture = getUserId().then((id) {
-                  if (id != null) {
-                    return getExpenses(id);
-                  }
-                  return null;
-                });
-              });
-            },
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -156,7 +153,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         onPressed: () {
                           addExpense();
                         },
-
                         style: ElevatedButton.styleFrom(
                           fixedSize: Size(50, 50),
                           backgroundColor: Colors.green,
@@ -194,32 +190,23 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
                           final expense = snapshot.data![index];
-                          print(
+                          debugPrint(
                             "Username being passed to ExpenseCard: $username",
-                          ); // Debug print
+                          ); // Debug debugPrint
                           return ExpenseCard(
                             id: expense['ID'].toString(),
                             username: username ?? 'Loading...',
-                            amount:
-                                (expense['AMOUNT'] is num)
-                                    ? (expense['AMOUNT'] as num).toDouble()
-                                    : double.tryParse(
-                                          expense['AMOUNT']?.toString() ??
-                                              '0.0',
-                                        ) ??
-                                        0.0,
+                            amount: (expense['AMOUNT'] is num)
+                                ? (expense['AMOUNT'] as num).toDouble()
+                                : double.tryParse(
+                                      expense['AMOUNT']?.toString() ?? '0.0',
+                                    ) ??
+                                    0.0,
                             category: expense['CATEGORY'],
                             date: DateTime.parse(expense['DATE']),
                             notes: expense['NOTES'],
                             onExpenseUpdated: () {
-                              setState(() {
-                                _expensesFuture = getUserId().then((id) {
-                                  if (id != null) {
-                                    return getExpenses(id);
-                                  }
-                                  return null;
-                                });
-                              });
+                              _refreshExpenses();
                             },
                           );
                         },
@@ -227,6 +214,60 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     }
                   },
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _refreshExpenses,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Text("Refresh"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final storage = FlutterSecureStorage();
+                          final prefs = await SharedPreferences.getInstance();
+
+                          await storage.delete(key: 'token');
+                          await storage.delete(key: 'id');
+                          await prefs.remove('username');
+                          await prefs.remove('email');
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        child: const Text("Logout"),
+                      ),
+                    ],
+                  ),
+                )
               ],
             ),
           ),

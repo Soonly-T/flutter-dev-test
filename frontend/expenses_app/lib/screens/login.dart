@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../widgets/alertBox.dart';
 import 'signup.dart';
+import 'package:expenses_app/main.dart';
 
 const double spaceHeight = 32;
 
@@ -31,8 +32,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<http.Response> login() {
+    debugPrint(frontendHost);
+
     return http.post(
-      Uri.parse('http://10.0.2.2:3000/login'), //android emulator
+      Uri.parse(
+        'http://$frontendHost:$frontendPort/login',
+      ), // Use the loaded host and port
+      // Uri.parse('http://10.0.2.2:3000/login'), //android emulator
       // Uri.parse('http://localhost:3000/login'), //andere
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -57,75 +63,68 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void handleLogin() {
-    bool filled = false;
-    print("printing credentials");
-    print('Login: ${loginController.text}');
-    print('Password: ${passwordController.text}');
+    debugPrint("printing credentials");
+    debugPrint('Login: ${loginController.text}');
+    debugPrint('Password: ${passwordController.text}');
 
     if (loginController.text.isEmpty && passwordController.text.isEmpty) {
-      print('Both login and password fields are empty');
+      debugPrint('Both login and password fields are empty');
       alertBox.showAlertDialog(
         context,
         "Please fill in the credentials",
         "Both username/email and password fields are empty",
       );
     } else if (loginController.text.isEmpty) {
-      print('Login field is empty');
+      debugPrint('Login field is empty');
       alertBox.showAlertDialog(
         context,
         "Please fill in the credentials",
         "Username/email field is empty",
       );
     } else if (passwordController.text.isEmpty) {
-      print('Password field is empty');
+      debugPrint('Password field is empty');
       alertBox.showAlertDialog(
         context,
         "Please fill in the credentials",
         "Password field is empty",
       );
     } else {
-      print('Both fields are filled');
+      debugPrint('Both fields are filled');
 
-      login()
-          .then((response) {
-            debugPrint("Response: ${response.statusCode}");
-            debugPrint("Response body: ${response.body}");
-            debugPrint("Response headers: ${response.headers}");
-            debugPrint(
-              "Response content type: ${response.headers['content-type']}",
-            );
-            debugPrint("Response content length: ${response.contentLength}");
-            if (response.statusCode == 200 || response.statusCode == 201) {
-              final responseBody = jsonDecode(response.body);
-              loginStatusNotifier.value =
-                  "Welcome back, ${responseBody['userData']["USERNAME"]}";
-              storeData(responseBody);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ExpensesScreen()),
-              );
-            } else if (response.statusCode == 401) {
-              final responseBody = jsonDecode(response.body);
-              loginStatusNotifier.value =
-                  responseBody['message'] ??
-                  "Invalid credentials. Please try again.";
-            } else if (response.statusCode == 500) {
-              final responseBody = jsonDecode(response.body);
-              loginStatusNotifier.value =
-                  responseBody['message'] ??
-                  "An internal server error occurred. Please try again later.";
-            } else {
-              loginStatusNotifier.value =
-                  "An unexpected error occurred. Please try again.";
-            }
-          })
-          .catchError((error) {
-            loginStatusNotifier.value =
-                'An error occurred: ${error.toString()}';
-          })
-          .whenComplete(() {
-            setState(() {}); // Ensure UI updates after login attempt
-          });
+      login().then((response) {
+        debugPrint("Response: ${response.statusCode}");
+        debugPrint("Response body: ${response.body}");
+        debugPrint("Response headers: ${response.headers}");
+        debugPrint(
+          "Response content type: ${response.headers['content-type']}",
+        );
+        debugPrint("Response content length: ${response.contentLength}");
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final responseBody = jsonDecode(response.body);
+          loginStatusNotifier.value =
+              "Welcome back, ${responseBody['userData']["USERNAME"]}";
+          storeData(responseBody);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ExpensesScreen()),
+          );
+        } else if (response.statusCode == 401) {
+          final responseBody = jsonDecode(response.body);
+          loginStatusNotifier.value = responseBody['message'] ??
+              "Invalid credentials. Please try again.";
+        } else if (response.statusCode == 500) {
+          final responseBody = jsonDecode(response.body);
+          loginStatusNotifier.value = responseBody['message'] ??
+              "An internal server error occurred. Please try again later.";
+        } else {
+          loginStatusNotifier.value =
+              "An unexpected error occurred. Please try again.";
+        }
+      }).catchError((error) {
+        loginStatusNotifier.value = 'An error occurred: ${error.toString()}';
+      }).whenComplete(() {
+        setState(() {}); // Ensure UI updates after login attempt
+      });
     }
   }
 
@@ -136,9 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment:
-              CrossAxisAlignment
-                  .stretch, // Use stretch to make children take full width
+          crossAxisAlignment: CrossAxisAlignment
+              .stretch, // Use stretch to make children take full width
           children: [
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -190,10 +188,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           ElevatedButton(
                             onPressed: () {
-                              print("Button pressed");
+                              debugPrint("Button pressed");
                               handleLogin();
                             },
                             child: const Text('Login'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                            ),
                           ),
                           ElevatedButton(
                             onPressed: () {
@@ -216,10 +218,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           status,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color:
-                                status.startsWith("Welcome back")
-                                    ? Colors.green
-                                    : Colors.red,
+                            color: status.startsWith("Welcome back")
+                                ? Colors.green
+                                : Colors.red,
                             fontSize: 16,
                           ),
                         );

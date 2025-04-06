@@ -24,17 +24,19 @@ const comparePassword= async(loginIdentifier,password)=>{
     console.log("Comparing password");
     console.log(loginIdentifier)
     console.log(hashdb);
-
-    const match=await bcrypt.compare(password,hashdb);
-    console.log("Match: ",match);
-
-
-    if (match){
+    try{
+        const match=await bcrypt.compare(password,hashdb);
+        console.log("Match: ",match);
         return true;
-    }
-    else{
+    }catch(err){
         return false;
+
     }
+
+    
+
+
+
 
 }
 

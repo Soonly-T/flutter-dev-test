@@ -30,6 +30,10 @@ router.post('/signup', async (req, res) => {
 router.post("/login", async (req, res) => {
     const { loginIdentifier, password } = req.body;
     try {
+        const getuser=await dbOperations.getUser(loginIdentifier);
+        if (!getuser) {
+            throw new Error("User not found");
+        }
         const correct = await encrypt.comparePassword(loginIdentifier, password);
         if (correct) {
             const userData = await dbOperations.getUser(loginIdentifier);
@@ -42,7 +46,7 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ message: "Password does not match with the username or email" });
         }
     } catch (err) {
-        console.log(err);
+        console.log("Error:"+err);
         // Display to the user code that user not found
         if (err.message === "User not found") {
             // Handle the "user not found" error

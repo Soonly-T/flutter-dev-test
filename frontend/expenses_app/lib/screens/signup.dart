@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import '../widgets/alertBox.dart';
 import 'package:http/http.dart' as http;
+import 'package:expenses_app/main.dart';
 
 const double spaceHeight = 32;
 
@@ -31,7 +33,10 @@ class _SignupState extends State<Signup> {
 
   Future<http.Response> signup() {
     return http.post(
-      Uri.parse('http://10.0.2.2:3000/signup'),
+      Uri.parse(
+        'http://$frontendHost:$frontendPort/signup',
+      ), // Use the loaded host and port
+      // Uri.parse('http://10.0.2.2:3000/signup'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': usernameController.text.trim(),
@@ -87,24 +92,22 @@ class _SignupState extends State<Signup> {
     }
 
     // Add your signup logic here
-    print('Username: ${usernameController.text}');
-    print('Email: ${emailController.text}');
-    print('Password: ${passwordController.text}');
-    print('Confirm Password: ${confirmPasswordController.text}');
+    debugPrint('Username: ${usernameController.text}');
+    debugPrint('Email: ${emailController.text}');
+    debugPrint('Password: ${passwordController.text}');
+    debugPrint('Confirm Password: ${confirmPasswordController.text}');
 
     if (valid) {
-      signup()
-          .then((response) {
-            if (response.statusCode == 200 || response.statusCode == 201) {
-              signupStatusNotifier.value = 'Signup successful!';
-            } else {
-              signupStatusNotifier.value =
-                  'Signup failed: ${(jsonDecode(response.body) as Map<String, dynamic>)["message"]}';
-            }
-          })
-          .catchError((error) {
-            signupStatusNotifier.value = 'Signup failed: $error';
-          });
+      signup().then((response) {
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          signupStatusNotifier.value = 'Signup successful!';
+        } else {
+          signupStatusNotifier.value =
+              'Signup failed: ${(jsonDecode(response.body) as Map<String, dynamic>)["message"]}';
+        }
+      }).catchError((error) {
+        signupStatusNotifier.value = 'Signup failed: $error';
+      });
     }
   }
 
@@ -170,6 +173,10 @@ class _SignupState extends State<Signup> {
                   ElevatedButton(
                     onPressed: _handleSignup,
                     child: const Text("Signup"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                   ValueListenableBuilder<String>(
                     valueListenable: signupStatusNotifier,
@@ -178,10 +185,9 @@ class _SignupState extends State<Signup> {
                         status,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color:
-                              status.contains('successful')
-                                  ? Colors.green
-                                  : Colors.red,
+                          color: status.contains('successful')
+                              ? Colors.green
+                              : Colors.red,
                         ),
                       );
                     },

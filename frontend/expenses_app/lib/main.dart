@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'screens/login.dart';
 
+String frontendHost = '192.168.0.115';
+int frontendPort = 3000;
 void main() {
   runApp(const MyApp());
 }
@@ -11,11 +13,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Expenses App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: LoginScreen(),
+      routes: {
+        '/login': (context) =>
+            const LoginScreen(), // Define the route for LoginScreen
+
+        // ... other routes
+      },
     );
   }
 }
